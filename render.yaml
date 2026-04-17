@@ -23,7 +23,7 @@ services:
       - key: SmtpUsername
         value: iyedtouato@gmail.com
       - key: TargetWebsiteUrl
-        value: https://tunisiefreelance.tn/fr/search
+        value: https://tunisiefreelance.tn/api/jobs?limit=20
     autoDeploy: true
 
 databases:
