@@ -2,18 +2,18 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
-using System.Net.Http.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using AzureWatcher.Function.Domain.Entities;
 using AzureWatcher.Function.Domain.Interfaces;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using HtmlAgilityPack;
 
 namespace AzureWatcher.Function.Infrastructure.Scraping;
 
 /// <summary>
-/// Scrapes job offers by calling the internal JSON API of tunisiefreelance.tn.
+/// Scrapes job offers by parsing the HTML search page of tunisiefreelance.tn.
 /// </summary>
 public class TunisieFreelanceApiScraper : IJobScraperService
 {
@@ -27,9 +27,8 @@ public class TunisieFreelanceApiScraper : IJobScraperService
         _configuration = configuration;
         _logger = logger;
         
-        // Ensure the API returns JSON
-        _httpClient.DefaultRequestHeaders.Accept.Clear();
-        _httpClient.DefaultRequestHeaders.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
+        // Add a realistic User-Agent to avoid being blocked
+        _httpClient.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
     }
 
     public async Task<IEnumerable<JobOffer>> FetchLatestOffersAsync(CancellationToken cancellationToken = default)
@@ -40,31 +39,64 @@ public class TunisieFreelanceApiScraper : IJobScraperService
 
         try
         {
-            _logger.LogInformation("Fetching job offers from API: {TargetUrl}", targetUrl);
+            _logger.LogInformation("Fetching job offers from: {TargetUrl}", targetUrl);
             
-            var response = await _httpClient.GetFromJsonAsync<TunisieFreelanceApiResponse>(targetUrl, cancellationToken);
+            var html = await _httpClient.GetStringAsync(targetUrl, cancellationToken);
+            var doc = new HtmlDocument();
+            doc.LoadHtml(html);
+
+            // Select all <article> elements which represent job items
+            var jobNodes = doc.DocumentNode.SelectNodes("//article");
             
-            if (response == null || response.Jobs == null)
+            if (jobNodes == null || !jobNodes.Any())
             {
-                _logger.LogWarning("Got empty response or null jobs from API.");
+                _logger.LogWarning("No job articles found on the page.");
                 return Enumerable.Empty<JobOffer>();
             }
 
-            var offers = response.Jobs.Select(job => new JobOffer
+            var offers = new List<JobOffer>();
+            foreach (var node in jobNodes)
             {
-                // Use slug as part of the link and maybe ID
-                Id = job.Id ?? Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(job.Slug)),
-                Title = job.Title,
-                Link = $"https://tunisiefreelance.tn/fr/jobs/{job.Slug}",
-                DiscoveredAt = DateTime.UtcNow
-            }).ToList();
+                try
+                {
+                    // Find the title and link anchor
+                    var titleAnchor = node.SelectSingleNode(".//h3/a") 
+                                      ?? node.SelectSingleNode(".//a[contains(@class, 'text-primary')]");
+                    
+                    if (titleAnchor == null) continue;
 
-            _logger.LogInformation("Found {Count} job offers in API response.", offers.Count);
+                    var title = titleAnchor.InnerText.Trim();
+                    var relativeLink = titleAnchor.GetAttributeValue("href", string.Empty);
+                    
+                    if (string.IsNullOrEmpty(title) || string.IsNullOrEmpty(relativeLink)) continue;
+
+                    var absoluteLink = relativeLink.StartsWith("/") 
+                        ? $"https://tunisiefreelance.tn{relativeLink}" 
+                        : relativeLink;
+
+                    // Generate a deterministic ID based on the URL
+                    var id = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(absoluteLink));
+
+                    offers.Add(new JobOffer
+                    {
+                        Id = id,
+                        Title = title,
+                        Link = absoluteLink,
+                        DiscoveredAt = DateTime.UtcNow
+                    });
+                }
+                catch (Exception nodeEx)
+                {
+                    _logger.LogWarning(nodeEx, "Failed to parse a specific job node.");
+                }
+            }
+
+            _logger.LogInformation("Successfully parsed {Count} job offers from HTML.", offers.Count);
             return offers;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to fetch or parse API response.");
+            _logger.LogError(ex, "Failed to fetch or parse job search page.");
             throw;
         }
     }
