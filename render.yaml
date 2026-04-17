@@ -1,0 +1,33 @@
+services:
+  - type: web
+    name: job-scraper-service
+    env: docker
+    plan: starter
+    region: frankfurt # Change if needed
+    dockerContext: .
+    dockerfilePath: Dockerfile
+    healthCheckPath: /
+    envVars:
+      - key: DATABASE_URL
+        value: postgresql://azurewatcher_user:noXZFQTlasN6BNMCpm9XDgEB3uM0Phxg@dpg-d7hakq1o3t8c73cnhjm0-a/azurewatcher
+      - key: EmailFromAddress
+        value: iyedtouato@gmail.com
+      - key: EmailToAddress
+        value: mediyedtouati@gmail.com
+      - key: SmtpHost
+        value: smtp.gmail.com
+      - key: SmtpPassword
+        value: umbhfawfooipveha
+      - key: SmtpPort
+        value: "587"
+      - key: SmtpUsername
+        value: iyedtouato@gmail.com
+      - key: TargetWebsiteUrl
+        value: https://tunisiefreelance.tn/fr/search
+    autoDeploy: true
+
+databases:
+  - name: azurewatcher
+    databaseName: azurewatcher
+    user: azurewatcher_user
+    plan: free # or starter

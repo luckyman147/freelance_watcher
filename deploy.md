@@ -7,10 +7,15 @@ This guide outlines the steps to deploy the .NET 8 App to Render.com as a **Web 
 1. A **Render.com** account.
 2. The code pushed to a GitHub/GitLab registry.
 
-## Infrastructure Resources Required
-On Render:
-- **PostgreSQL Database** (Render provides a managed PostgreSQL service with a free tier).
-- **Web Service** (Enables HTTP health checks and public access).
+## Deployment Options
+
+### Option A: Manual Deployment (Easiest for quick setup)
+Follow the "Step-by-Step Deployment" section below.
+
+### Option B: Render Blueprints (Recommended for Automation)
+1. In the Render Dashboard, go to **Blueprints**.
+2. Connect this repository.
+3. Render will use the `render.yaml` file to automatically provision the Database and Web Service with all configurations!
 
 ## Step-by-Step Deployment (Render Dashboard)
 
