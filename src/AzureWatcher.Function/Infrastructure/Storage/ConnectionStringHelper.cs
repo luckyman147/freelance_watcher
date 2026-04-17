@@ -10,7 +10,8 @@ public static class ConnectionStringHelper
         if (string.IsNullOrEmpty(rawConnectionString))
             return string.Empty;
 
-        if (!rawConnectionString.StartsWith("postgres://", StringComparison.OrdinalIgnoreCase))
+        if (!rawConnectionString.StartsWith("postgres://", StringComparison.OrdinalIgnoreCase) && 
+            !rawConnectionString.StartsWith("postgresql://", StringComparison.OrdinalIgnoreCase))
             return rawConnectionString;
 
         try
