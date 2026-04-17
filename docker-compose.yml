@@ -1,0 +1,37 @@
+version: '3.8'
+
+services:
+  database:
+    image: postgres:15-alpine
+    container_name: azurewatcher-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: Password123!
+      POSTGRES_DB: azurewatcher
+    ports:
+      - "5439:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: azurewatcher-worker
+    environment:
+      # Connection string uses the service name "database" as host
+      - ConnectionStrings__DefaultConnection=Host=database;Database=azurewatcher;Username=postgres;Password=Password123!
+      - TargetWebsiteUrl=https://tunisiefreelance.tn/fr/search
+      - SmtpHost=smtp.gmail.com
+      - SmtpPort=587
+      - SmtpUsername=iyedtouato@gmail.com
+      - SmtpPassword=umbhfawfooipveha 
+      - EmailFromAddress=iyedtouato@gmail.com
+      - EmailToAddress=mediyedtouati@gmail.com
+    depends_on:
+      - database
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
