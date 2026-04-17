@@ -30,7 +30,8 @@ On Render:
 
 3. **Configure Environment Variables:**
    Under the **Environment** section, add the following variables:
-   - `ConnectionStrings__DefaultConnection`: `<The Internal Database URL from Step 1>`
+   - `DATABASE_URL`: `<The Internal Database URL from Step 1>` (Optional: if this is set, it will be used automatically).
+   - `ConnectionStrings__DefaultConnection`: `<The Internal Database URL>` (Fallback if DATABASE_URL is not set).
    - `TargetWebsiteUrl`: `https://tunisiefreelance.tn/fr/search`
    - `SmtpHost`: `smtp.gmail.com` (or your provider's SMTP host)
    - `SmtpPort`: `587` (typically 587 for TLS, or 465 for SSL)
