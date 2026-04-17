@@ -16,6 +16,8 @@ FROM mcr.microsoft.com/dotnet/aspnet:8.0
 WORKDIR /app
 COPY --from=build /app/publish .
 
-# Render exposes the container via a dynamic port, though Background Workers don't strictly need it.
-# EXPOSE 80 
+# Render Web Service configuration
+ENV ASPNETCORE_URLS=http://+:10000
+EXPOSE 10000
+
 ENTRYPOINT ["dotnet", "AzureWatcher.Function.dll"]

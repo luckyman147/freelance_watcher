@@ -1,6 +1,6 @@
 # Deployment Guide for Render.com
 
-This guide outlines the steps to deploy the .NET 8 Worker Service to Render.com as a Background Worker using Docker.
+This guide outlines the steps to deploy the .NET 8 App to Render.com as a **Web Service** using Docker.
 
 ## Prerequisites
 
@@ -10,7 +10,7 @@ This guide outlines the steps to deploy the .NET 8 Worker Service to Render.com 
 ## Infrastructure Resources Required
 On Render:
 - **PostgreSQL Database** (Render provides a managed PostgreSQL service with a free tier).
-- **Background Worker** (Render offers a free or very cheap background worker tier).
+- **Web Service** (Enables HTTP health checks and public access).
 
 ## Step-by-Step Deployment (Render Dashboard)
 
@@ -20,12 +20,13 @@ On Render:
    - Click **Create Database**.
    - Copy the "Internal Database URL".
 
-2. **Deploy the Background Worker:**
-   - Go to the Render Dashboard -> New -> **Background Worker**.
+2. **Deploy the Web Service:**
+   - Go to the Render Dashboard -> New -> **Web Service**.
    - Connect your GitHub repository containing the project.
    - Configure the service:
-     - **Name**: `job-scraper-worker`
-     - **Environment**: `Docker` (Render will automatically detect the `Dockerfile` at the root).
+     - **Name**: `job-scraper-service`
+     - **Environment**: `Docker`
+     - **Instance Type**: `Starter` (or Free if available)
 
 3. **Configure Environment Variables:**
    Under the **Environment** section, add the following variables:
@@ -41,11 +42,12 @@ On Render:
    *(Note: The `__` in the ConnectionString var represents the nested JSON structure `ConnectionStrings:DefaultConnection` in appsettings.json).*
 
 4. **Deploy**:
-   - Click **Create Background Worker**. Render will build the Docker container and start running your loop! 
+   - Click **Create Web Service**. Render will build the Docker container, run migrations, and start both the HTTP server and your background monitoring logic! 
 
 ## Monitoring
 
-- Once running, the worker will execute every 10 minutes.
-- The `Dockerfile` handles the entire build process.
-- On startup, the generic host will automatically apply Entity Framework Core migrations to your PostgreSQL database.
-- You can monitor execution logs from the Logs tab of your Background Worker in Render.
+- Once running, the worker will execute every 1 hour (as configured in `Worker.cs`).
+- The `Dockerfile` handles the entire build process and exposes port 10000.
+- On startup, the app automatically applies Entity Framework Core migrations to your PostgreSQL database.
+- You can verify the service is alive by visiting the public URL of your Web Service.
+- Monitor execution logs from the Logs tab in Render.

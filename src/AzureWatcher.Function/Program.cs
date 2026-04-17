@@ -9,7 +9,7 @@ using AzureWatcher.Function.Infrastructure.Storage;
 using Microsoft.EntityFrameworkCore;
 using AzureWatcher.Function;
 
-var builder = Host.CreateApplicationBuilder(args);
+var builder = WebApplication.CreateBuilder(args);
 
 // 1. Storage Configuration (PostgreSQL)
 var connectionString = builder.Configuration["ConnectionStrings:DefaultConnection"]
@@ -32,14 +32,15 @@ builder.Services.AddScoped<JobMonitorService>();
 // 5. Worker Service
 builder.Services.AddHostedService<Worker>();
 
-var host = builder.Build();
+var app = builder.Build();
 
 // Wait for database to be ready and apply migrations
-using (var scope = host.Services.CreateScope())
+using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    // Automatically apply any pending migrations or create the db
     db.Database.Migrate();
 }
 
-host.Run();
+app.MapGet("/", () => "Azure Watcher is active and monitoring job offers.");
+
+app.Run();
