@@ -12,8 +12,11 @@ using AzureWatcher.Function;
 var builder = WebApplication.CreateBuilder(args);
 
 // 1. Storage Configuration (PostgreSQL)
-var connectionString = builder.Configuration["ConnectionStrings:DefaultConnection"]
-                       ?? throw new System.InvalidOperationException("DefaultConnection config is missing.");
+var rawConnectionString = builder.Configuration["DATABASE_URL"] 
+                          ?? builder.Configuration["ConnectionStrings:DefaultConnection"]
+                          ?? throw new System.InvalidOperationException("Database connection string is missing.");
+
+var connectionString = ConnectionStringHelper.ConvertToNpgsqlFormat(rawConnectionString);
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(connectionString));
